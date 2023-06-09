@@ -41,11 +41,25 @@
     ```
 
 ### おまけ
-次のコマンドを実行することで、ファイルのアップロード、bicepファイルをデプロイ、トリガーの開始
-を全て自動で行うことができる
-```
-./adf.sh
-```
+- 次のコマンドを実行することで、GUIを使わずファイルのアップロードをすることができる
+    ```
+    # リソースをデプロイし、デプロイ結果をjsonに保存
+    az deployment group create --resource-group exampleRG --template-file main.bicep > deploy_result.json
+
+    # jsonから、生成されたIDを抽出する
+    VAR=`cat deploy_result.json| jq -r '.properties.outputs.uniqueRG.value'`
+
+    # Azure Storage コンテナーにテキストファイルをアップロード
+    az storage blob upload --account-name "storage${VAR}" --name input/emp.txt \
+        --container-name "blob${VAR}" --file emp.txt --auth-mode key
+    ```
+- トリガーの実行も同じようにできる
+    ```
+    VAR=`cat deploy_result.json| jq -r '.properties.outputs.uniqueRG.value'`
+
+    az datafactory pipeline create-run --resource-group exampleRG \
+     --name ArmtemplateSampleCopyPipeline --factory-name "datafactory${VAR}"
+    ```
 
 ### メモ
 クイックスタートで使用される Bicep ファイルでデプロイされたリソースには、[uniqueString](https://learn.microsoft.com/ja-jp/azure/azure-resource-manager/bicep/bicep-functions-string#uniquestring)関数を使って生成されたIDが指定されている。  
